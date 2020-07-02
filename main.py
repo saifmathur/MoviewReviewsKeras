@@ -1,34 +1,35 @@
 #%%
+import tensorflow as tf
 import pandas as pd
 import numpy as np
-import os
-print(os.listdir())
-from __future__ import absolute_import, division, print_function,unicode_literals
-
-import seaborn as sns
-import matplotlib.pyplot as plt
-%matplotlib inline
-import warnings
-#import skimage not running in py 3.8
-import keras
+from tensorflow.keras.preprocessing.text import Tokenizer
+from tensorflow.keras.preprocessing.sequence import pad_sequences
 from sklearn.preprocessing import LabelEncoder
+from sklearn.model_selection import train_test_split
+import matplotlib.pyplot as plt
+import seaborn as sns
+import tensorflow_datasets as tfds
 
-# %%
-data = pd.read_csv('data/IMDB Dataset.csv')
-data.info()
-data.sentiment.value_counts()
-# %%
+#%%
+df = pd.read_csv('data\IMDB Dataset.csv')
+sns.countplot(df['sentiment'])
+#%%
 le = LabelEncoder()
-data['sentiment'] = le.fit_transform(data['sentiment'])
+x_rev_train,x_rev_test,y_label_train,y_label_test = train_test_split(df['review'].values, df['sentiment'].values,test_size=0.2)
+y_label_train = le.fit_transform(y_label_train)
+y_label_test = le.fit_transform(y_label_test)
 
+#%%
+#preprocessing the text
+tokenizer = Tokenizer(num_words=10000,oov_token='<OOV>')
+tokenizer.fit_on_texts(x_rev_train)
+word_index = tokenizer.word_index
 
-# %%
-#avg number of words per sample
-plt.figure(figsize=(10,6))
-plt.hist([len(i) for i in list(data['review'])],50)
-plt.xlabel('Len of samples')
-plt.ylabel('num of samples')
-plt.title('sample len distribution')
-plt.show()
+#%%
+training_sequence = tokenizer.texts_to_sequences(x_rev_train)
+testing_sequence = tokenizer.texts_to_sequences(x_rev_test)
+train_pad_sequence = pad_sequences(training_sequence,maxlen=200,
+                    truncating='post',padding='pre')
+#%%
+#glove vectors for embedding
 
-# %%
